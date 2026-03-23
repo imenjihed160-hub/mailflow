@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MailFlow — لوحة التحكم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07070e;--surface:#0f0f1a;--surface2:#171725;--surface3:#1f1f30;
+  --border:#252535;--accent:#00d4ff;--accent2:#7c3aed;--accent3:#10b981;
+  --text:#e8e8f4;--muted:#5a5a72;--danger:#ef4444;--warn:#f59e0b;
+  --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(0,212,255,.06),transparent);pointer-events:none;z-index:0}
+/* ── SIDEBAR ── */
+.sidebar{width:230px;flex-shrink:0;background:rgba(7,7,14,.98);border-left:1px solid var(--border);display:flex;flex-direction:column;position:relative;z-index:10}
+.sidebar-logo{padding:20px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-box{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 0 16px rgba(0,212,255,.25)}
+.logo-text{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--accent)}
+.logo-version{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:1px}
+.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-section{padding:10px 18px 4px;font-size:9.5px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;font-weight:700}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13px;color:var(--muted);cursor:pointer;transition:all .15s;border-right:2px solid transparent;user-select:none;border-radius:0}
+.nav-item:hover{color:var(--text);background:var(--surface2)}
+.nav-item.active{color:var(--accent);background:rgba(0,212,255,.05);border-right-color:var(--accent);font-weight:600}
+.nav-item .icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.sidebar-footer{padding:14px 16px;border-top:1px solid var(--border)}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.user-card:hover{border-color:var(--accent)}
+.user-avatar{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:12.5px;font-weight:600;line-height:1.2;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-plan{font-size:10.5px;color:var(--accent3)}
+.logout-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 4px;margin-right:auto;transition:color .2s}
+.logout-btn:hover{color:var(--danger)}
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:1}
+.topbar{height:56px;border-bottom:1px solid var(--border);background:rgba(7,7,14,.85);backdrop-filter:blur(20px);display:flex;align-items:center;padding:0 24px;gap:14px;flex-shrink:0}
+.topbar h1{font-size:16px;font-weight:700;flex:1}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.content{flex:1;overflow-y:auto;padding:24px}
+.page{display:none}.page.active{display:block}
+/* ── BUTTONS ── */
+.btn{padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;transition:all .18s;font-family:'IBM Plex Sans Arabic',sans-serif;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#008faa);color:#000}
+.btn-primary:hover{filter:brightness(1.1);box-shadow:0 4px 14px rgba(0,212,255,.25)}
+.btn-primary:active{transform:scale(.98)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent);background:rgba(0,212,255,.04)}
+.btn-danger{background:rgba(239,68,68,.08);color:var(--danger);border:1px solid rgba(239,68,68,.15)}
+.btn-danger:hover{background:rgba(239,68,68,.15)}
+.btn-success{background:rgba(16,185,129,.08);color:var(--accent3);border:1px solid rgba(16,185,129,.2)}
+.btn-sm{padding:5px 12px;font-size:11.5px}
+.btn-icon{padding:6px 9px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:7px;cursor:pointer;transition:all .18s;font-size:13px}
+.btn-icon:hover{color:var(--text);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:border-color .2s}
+.stat-card:hover{border-color:var(--surface3)}
+.stat-label{font-size:11.5px;color:var(--muted);margin-bottom:8px;font-weight:500}
+.stat-value{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;line-height:1}
+.stat-sub{font-size:11px;margin-top:5px}
+.progress-bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;border-radius:2px;transition:width .6s ease}
+/* ── TABLE ── */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.table-header h3{font-size:13.5px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:right;font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;background:rgba(37,37,53,.5);border-bottom:1px solid var(--border)}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid rgba(37,37,53,.6)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.012)}
+.text-muted{color:var(--muted)}.text-accent{color:var(--accent)}.text-green{color:var(--accent3)}.text-red{color:var(--danger)}.text-warn{color:var(--warn)}
+.font-mono{font-family:'Space Mono',monospace;font-size:11.5px}
+/* ── PILLS ── */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:100px;font-size:10.5px;font-weight:700}
+.pill-sent{background:rgba(16,185,129,.1);color:var(--accent3);border:1px solid rgba(16,185,129,.2)}
+.pill-failed{background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.2)}
+.pill-pending{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.2)}
+/* ── FORMS ── */
+.form-group{margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+label{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.input,.textarea,.select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-family:'IBM Plex Sans Arabic',sans-serif;font-size:13px;outline:none;transition:all .18s}
+.input:focus,.textarea:focus,.select:focus{border-color:var(--accent);background:var(--surface3);box-shadow:0 0 0 3px rgba(0,212,255,.08)}
+.input::placeholder,.textarea::placeholder{color:var(--muted)}
+.textarea{min-height:160px;resize:vertical;font-family:'Space Mono',monospace;font-size:12px;line-height:1.7}
+.select option{background:var(--surface2)}
+.input-hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;backdrop-filter:blur(10px);align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;animation:modalIn .2s ease;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(12px)}to{opacity:1;transform:none}}
+.modal-close{position:absolute;top:14px;left:14px;background:var(--surface2);border:1px solid var(--border);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:13px;transition:all .18s}
+.modal-close:hover{color:var(--text);border-color:var(--danger);background:rgba(239,68,68,.08)}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:5px}
+.modal-sub{color:var(--muted);font-size:12.5px;margin-bottom:22px;line-height:1.5}
+/* ── EMPTY ── */
+.empty{text-align:center;padding:56px 24px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:14px;opacity:.4}
+.empty h3{font-size:15px;font-weight:600;color:var(--text);margin-bottom:7px}
+.empty p{font-size:12.5px;line-height:1.6;max-width:300px;margin:0 auto 18px}
+/* ── CODE ── */
+.code-box{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:14px 16px;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.9;overflow-x:auto;position:relative}
+.code-copy{position:absolute;top:8px;left:8px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:10.5px;color:var(--muted);cursor:pointer;transition:all .18s}
+.code-copy:hover{color:var(--accent);border-color:var(--accent)}
+.c-comment{color:#3d3d5c}.c-keyword{color:#7c3aed}.c-string{color:#10b981}.c-func{color:#00d4ff}.c-var{color:#f59e0b}.c-tag{color:#ef4444}
+/* ── KEY CARD ── */
+.key-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;gap:14px;margin-bottom:10px;transition:all .2s}
+.key-card:hover{border-color:rgba(0,212,255,.3)}
+.key-icon{width:38px;height:38px;background:rgba(0,212,255,.07);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.key-info{flex:1;min-width:0}
+.key-label{font-size:13.5px;font-weight:600;margin-bottom:3px}
+.key-value{font-family:'Space Mono',monospace;font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.key-actions{display:flex;gap:6px}
+/* ── TEMPLATE GRID ── */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.tpl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;cursor:pointer;transition:all .2s;position:relative}
+.tpl-card:hover{border-color:rgba(124,58,237,.4);transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,58,237,.08)}
+.tpl-name{font-size:13.5px;font-weight:600;margin-bottom:5px}
+.tpl-sub{font-size:12px;color:var(--muted);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tpl-actions{display:flex;gap:6px}
+.tpl-badge{display:inline-flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.tpl-var{background:rgba(0,212,255,.08);color:var(--accent);border:1px solid rgba(0,212,255,.15);padding:2px 7px;border-radius:5px;font-size:10px;font-family:'Space Mono',monospace}
+/* ── ALERT ── */
+.alert{padding:11px 14px;border-radius:9px;font-size:12.5px;display:flex;align-items:flex-start;gap:9px;margin-bottom:14px;line-height:1.5}
+.alert-success{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--accent3)}
+.alert-error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:var(--danger)}
+.alert-info{background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.15);color:var(--accent)}
+.alert-warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--warn)}
+/* ── CHART ── */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:20px}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:72px}
+.bar{flex:1;border-radius:3px 3px 0 0;transition:all .3s;cursor:default;position:relative;min-height:4px}
+.bar:hover .bar-tooltip{display:block}
+.bar-tooltip{display:none;position:absolute;bottom:calc(100% + 6px);right:50%;transform:translateX(50%);background:var(--surface3);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:11px;white-space:nowrap;pointer-events:none;z-index:10}
+.bar-labels{display:flex;gap:5px;margin-top:5px}
+.bar-label{flex:1;text-align:center;font-size:10px;color:var(--muted)}
+/* ── SVC CARD ── */
+.svc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;gap:14px;margin-bottom:10px;transition:all .2s}
+.svc-card:hover{border-color:rgba(16,185,129,.3)}
+.svc-icon{width:42px;height:42px;background:rgba(16,185,129,.07);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.svc-info{flex:1}
+.svc-name{font-size:13.5px;font-weight:600;margin-bottom:3px}
+.svc-meta{font-size:11.5px;color:var(--muted)}
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--border)}
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:38px;width:400px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px;justify-content:center}
+.login-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px}
+.tabs-sm{display:flex;background:var(--surface2);border-radius:9px;padding:3px;gap:2px;margin-bottom:22px}
+.tab-sm{flex:1;padding:8px;text-align:center;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .18s;color:var(--muted)}
+.tab-sm.active{background:var(--surface3);color:var(--text)}
+/* ── WEBHOOK CARD ── */
+.wh-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.wh-dot{width:8px;height:8px;border-radius:50%;background:var(--accent3);flex-shrink:0;box-shadow:0 0 6px var(--accent3)}
+.wh-dot.off{background:var(--muted);box-shadow:none}
+/* ── PLAN BADGE ── */
+.plan-free{background:rgba(0,212,255,.08);color:var(--accent);border:1px solid rgba(0,212,255,.15);padding:2px 9px;border-radius:100px;font-size:10.5px;font-weight:700}
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast-item{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;animation:toastIn .25s ease;pointer-events:auto;box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.toast-success{background:var(--surface3);border:1px solid rgba(16,185,129,.3);color:var(--accent3)}
+.toast-error{background:var(--surface3);border:1px solid rgba(239,68,68,.3);color:var(--danger)}
+.toast-info{background:var(--surface3);border:1px solid rgba(0,212,255,.2);color:var(--accent)}
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border);margin:20px 0}
+/* ── RESPONSIVE ── */
+@media(max-width:768px){.stats-grid{grid-template-columns:1fr 1fr}.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════
+     LOGIN SCREEN
+═══════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-box">✉</div>
+      <span class="logo-text">MailFlow</span>
+    </div>
+    <div class="tabs-sm" id="login-tabs">
+      <div class="tab-sm active" onclick="switchLoginTab('login')">تسجيل الدخول</div>
+      <div class="tab-sm" onclick="switchLoginTab('register')">حساب جديد مجاني</div>
+    </div>
+    <div id="alert-login"></div>
+    <!-- LOGIN FORM -->
+    <div id="login-form">
+      <div class="form-group">
+        <label>البريد الإلكتروني</label>
+        <input class="input" id="login-email" type="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور</label>
+        <input class="input" id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary" id="login-btn" style="width:100%;padding:11px;font-size:14px;margin-top:2px;justify-content:center" onclick="doLogin()">دخول →</button>
+    </div>
+    <!-- REGISTER FORM -->
+    <div id="register-form" style="display:none">
+      <div class="form-group">
+        <label>الاسم (اختياري)</label>
+        <input class="input" id="reg-name" placeholder="اسمك">
+      </div>
+      <div class="form-group">
+        <label>البريد الإلكتروني</label>
+        <input class="input" id="reg-email" type="email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور</label>
+        <input class="input" id="reg-pass" type="password" placeholder="6 أحرف على الأقل">
+      </div>
+      <button class="btn btn-primary" id="register-btn" style="width:100%;padding:11px;font-size:14px;justify-content:center" onclick="doRegister()">إنشاء حساب مجاني →</button>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:18px">500 إيميل/شهر مجاناً · بدون بطاقة ائتمان</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════
+     SIDEBAR
+═══════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-box">✉</div>
+    <div>
+      <div class="logo-text">MailFlow</div>
+      <div class="logo-version">v2.0</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">الرئيسية</div>
+    <div class="nav-item active" onclick="showPage('overview')"><span class="icon">📊</span>نظرة عامة</div>
+    <div class="nav-item" onclick="showPage('logs')"><span class="icon">📤</span>سجل الإيميلات</div>
+    <div class="nav-section" style="margin-top:6px">الإعداد</div>
+    <div class="nav-item" onclick="showPage('templates')"><span class="icon">📋</span>القوالب</div>
+    <div class="nav-item" onclick="showPage('services')"><span class="icon">🔌</span>خدمات SMTP</div>
+    <div class="nav-item" onclick="showPage('keys')"><span class="icon">🔑</span>مفاتيح API</div>
+    <div class="nav-item" onclick="showPage('webhooks')"><span class="icon">🔗</span>Webhooks</div>
+    <div class="nav-section" style="margin-top:6px">المطور</div>
+    <div class="nav-item" onclick="showPage('integration')"><span class="icon">⚡</span>طريقة الدمج</div>
+    <div class="nav-item" onclick="showPage('playground')"><span class="icon">🧪</span>اختبار الإرسال</div>
+    <div class="nav-section" style="margin-top:6px">الحساب</div>
+    <div class="nav-item" onclick="showPage('account')"><span class="icon">⚙️</span>إعدادات الحساب</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar" id="sidebar-avatar">م</div>
+      <div style="min-width:0;flex:1">
+        <div class="user-name" id="sidebar-name">مستخدم</div>
+        <div class="user-plan" id="sidebar-plan">Free — 500 إيميل/شهر</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()" title="تسجيل الخروج">⏏</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════
+     MAIN
+═══════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <h1 id="page-title">نظرة عامة</h1>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="showPage('playground')">🧪 اختبار</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-template')">+ قالب جديد</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ── OVERVIEW ── -->
+    <div class="page active" id="page-overview">
+      <div id="overview-alert"></div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">إيميلات هذا الشهر</div>
+          <div class="stat-value text-accent" id="stat-month">—</div>
+          <div class="stat-sub text-muted">من <span id="stat-limit">500</span> الحد الشهري</div>
+          <div class="progress-bar"><div class="progress-fill" id="stat-progress" style="background:var(--accent);width:0%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">معدل النجاح</div>
+          <div class="stat-value text-green" id="stat-rate">—%</div>
+          <div class="stat-sub text-muted" id="stat-rate-label">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">إجمالي مُرسَل</div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-sub text-muted">منذ إنشاء الحساب</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">اليوم</div>
+          <div class="stat-value text-warn" id="stat-today">—</div>
+          <div class="stat-sub text-muted">إيميل اليوم</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">
+          <span>الإيميلات — آخر 30 يوم</span>
+          <span class="text-muted" style="font-size:11px;font-weight:400">الأخضر = مُرسَل</span>
+        </div>
+        <div class="bar-chart" id="overview-chart"></div>
+        <div class="bar-labels" id="chart-labels"></div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <h3>آخر الإيميلات</h3>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('logs')">عرض الكل ←</button>
+        </div>
+        <table><thead><tr><th>المستلم</th><th>الموضوع</th><th>الحالة</th><th>الوقت</th></tr></thead>
+        <tbody id="overview-logs-body"><tr><td colspan="4" class="text-muted" style="text-align:center;padding:28px">جارٍ التحميل…</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ── LOGS ── -->
+    <div class="page" id="page-logs">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700">سجل الإيميلات</h2>
+          <p class="text-muted" style="font-size:12.5px;margin-top:2px">آخر 100 إيميل</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <select class="select" id="log-filter-status" style="width:130px" onchange="loadLogs()">
+            <option value="">كل الحالات</option>
+            <option value="sent">مُرسَل ✓</option>
+            <option value="failed">فشل ✕</option>
+            <option value="pending">انتظار</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadLogs()">🔄 تحديث</button>
+        </div>
+      </div>
+      <div class="table-card">
+        <table><thead><tr><th>المعرّف</th><th>المستلم</th><th>الموضوع</th><th>الخدمة</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+        <tbody id="logs-body"><tr><td colspan="6" class="text-muted" style="text-align:center;padding:28px">جارٍ التحميل…</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ── TEMPLATES ── -->
+    <div class="page" id="page-templates">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700">القوالب</h2>
+          <p class="text-muted" style="font-size:12.5px;margin-top:3px">استخدم <code style="color:var(--accent);font-size:11px">{{variable}}</code> للمتغيرات الديناميكية</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-template')">+ قالب جديد</button>
+      </div>
+      <div class="tpl-grid" id="templates-grid"></div>
+    </div>
+
+    <!-- ── SERVICES ── -->
+    <div class="page" id="page-services">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700">خدمات SMTP</h2>
+          <p class="text-muted" style="font-size:12.5px;margin-top:3px">اربط Gmail أو Outlook أو أي SMTP لإرسال الإيميلات</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-service')">+ خدمة جديدة</button>
+      </div>
+      <div id="services-list"></div>
+      <div style="margin-top:20px">
+        <div class="alert alert-info">💡 <strong>Gmail:</strong> فعّل المصادقة الثنائية ثم أنشئ <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--accent)">App Password</a> — استخدمه بدلاً من كلمة مرورك العادية</div>
+        <div class="code-box" style="font-size:12px">
+SMTP Host: <span class="c-string">smtp.gmail.com</span>   Port: <span class="c-var">587</span>
+User:      <span class="c-string">your@gmail.com</span>
+Password:  <span class="c-string">xxxx xxxx xxxx xxxx</span>  <span class="c-comment">← App Password (16 حرف)</span></div>
+      </div>
+    </div>
+
+    <!-- ── API KEYS ── -->
+    <div class="page" id="page-keys">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700">مفاتيح API</h2>
+          <p class="text-muted" style="font-size:12.5px;margin-top:3px">المفاتيح العامة <code style="color:var(--accent);font-size:11px">pk_</code> آمنة للاستخدام في Frontend</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-key')">+ مفتاح جديد</button>
+      </div>
+      <div id="keys-list"></div>
+    </div>
+
+    <!-- ── WEBHOOKS ── -->
+    <div class="page" id="page-webhooks">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700">Webhooks</h2>
+          <p class="text-muted" style="font-size:12.5px;margin-top:3px">استقبل إشعارات فورية عند إرسال أو فشل الإيميلات</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-webhook')">+ Webhook جديد</button>
+      </div>
+      <div id="webhooks-list"></div>
+      <div class="alert alert-info" style="margin-top:16px">🔐 يمكنك إضافة Secret لتحقق من صحة الطلبات بتوقيع HMAC-SHA256</div>
+    </div>
+
+    <!-- ── INTEGRATION ── -->
+    <div class="page" id="page-integration">
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:5px">طريقة الدمج</h2>
+      <p class="text-muted" style="font-size:12.5px;margin-bottom:22px">أضف MailFlow لموقعك في دقيقتين — بديل كامل لـ EmailJS</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px">
+        <div>
+          <h3 style="font-size:13px;font-weight:600;margin-bottom:10px">1. أضف SDK عبر HTML</h3>
+          <div class="code-box"><button class="code-copy" onclick="copyCode(this)">نسخ</button>&lt;<span class="c-keyword">script</span> <span class="c-var">src</span>=<span class="c-string" id="intg-sdk-url">"https://your-api.com/sdk.js"</span>&gt;&lt;/<span class="c-keyword">script</span>&gt;</div>
+        </div>
+        <div>
+          <h3 style="font-size:13px;font-weight:600;margin-bottom:10px">أو عبر npm</h3>
+          <div class="code-box"><button class="code-copy" onclick="copyCode(this)">نسخ</button>npm install mailflow-js</div>
+        </div>
+      </div>
+      <h3 style="font-size:13px;font-weight:600;margin-bottom:10px">2. الكود الكامل (مثال نموذج تواصل)</h3>
+      <div class="code-box" style="line-height:2;margin-bottom:20px"><button class="code-copy" onclick="copyCode(this)">نسخ</button>
+<span class="c-comment">// تهيئة المكتبة</span>
+MailFlow.<span class="c-func">init</span>(<span class="c-string" id="integration-pk">'pk_your_key_here'</span>)
+
+<span class="c-comment">// إرسال عند إرسال النموذج</span>
+document.querySelector(<span class="c-string">'#contact-form'</span>).addEventListener(<span class="c-string">'submit'</span>, <span class="c-keyword">async</span> (e) => {
+  e.preventDefault()
+
+  <span class="c-keyword">const</span> result = <span class="c-keyword">await</span> MailFlow.<span class="c-func">send</span>({
+    template_id: <span class="c-string" id="integration-tpl">'your_template_id'</span>,
+    to_email:    <span class="c-string">'you@example.com'</span>,
+    params: {
+      name:    e.target.name.value,
+      email:   e.target.email.value,
+      message: e.target.message.value
+    }
+  })
+
+  <span class="c-keyword">if</span> (result.ok) alert(<span class="c-string">'✅ تم الإرسال!'</span>)
+  <span class="c-keyword">else</span>          alert(<span class="c-string">'❌ فشل: '</span> + result.error)
+})</div>
+      <h3 style="font-size:13px;font-weight:600;margin-bottom:10px">3. REST API مباشرة (curl / fetch)</h3>
+      <div class="code-box" style="line-height:2"><button class="code-copy" onclick="copyCode(this)">نسخ</button>
+<span class="c-keyword">curl</span> -X POST <span class="c-string" id="intg-api-url">https://your-api.com</span>/v1/send \
+  -H <span class="c-string">"Content-Type: application/json"</span> \
+  -H <span class="c-string">"X-Public-Key: <span id="intg-pk-curl">pk_your_key</span>"</span> \
+  -d <span class="c-string">'{"template_id":"<span id="intg-tpl-curl">tpl_id</span>","to_email":"test@example.com","params":{"name":"أحمد"}}'</span>
+      </div>
+    </div>
+
+    <!-- ── PLAYGROUND ── -->
+    <div class="page" id="page-playground">
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:5px">اختبار الإرسال</h2>
+      <p class="text-muted" style="font-size:12.5px;margin-bottom:22px">أرسل إيميل حقيقي الآن مباشرة من لوحة التحكم</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:920px">
+        <div>
+          <div class="form-group">
+            <label>القالب</label>
+            <select class="select" id="pg-template"><option value="">— اختر قالباً —</option></select>
+          </div>
+          <div id="pg-vars"></div>
+          <div class="form-group">
+            <label>إرسال إلى</label>
+            <input class="input" id="pg-to" type="email" placeholder="test@example.com">
+          </div>
+          <div class="form-group">
+            <label>المتغيرات (JSON)</label>
+            <textarea class="textarea" id="pg-params" style="min-height:110px">{"name": "أحمد", "message": "هذا اختبار"}</textarea>
+            <div class="input-hint">أدخل متغيرات القالب كـ JSON</div>
+          </div>
+          <button class="btn btn-primary" style="padding:11px 26px;font-size:14px" onclick="sendPlayground()">🚀 أرسل الإيميل</button>
+        </div>
+        <div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;min-height:280px">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px">نتيجة الإرسال</div>
+            <div id="pg-result" class="text-muted" style="font-size:12.5px;line-height:1.6">سيظهر الرد هنا بعد الإرسال…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ACCOUNT ── -->
+    <div class="page" id="page-account">
+      <h2 style="font-size:17px;font-weight:700;margin-bottom:20px">إعدادات الحساب</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px">
+        <div class="table-card" style="padding:20px">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">معلومات الحساب</h3>
+          <div class="form-group">
+            <label>الاسم</label>
+            <input class="input" id="acc-name" placeholder="اسمك">
+          </div>
+          <div class="form-group">
+            <label>البريد الإلكتروني</label>
+            <input class="input" id="acc-email" disabled style="opacity:.6">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveProfile()">حفظ التغييرات</button>
+        </div>
+        <div class="table-card" style="padding:20px">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">تغيير كلمة المرور</h3>
+          <div class="form-group">
+            <label>كلمة المرور الحالية</label>
+            <input class="input" id="acc-pass-current" type="password" placeholder="••••••••">
+          </div>
+          <div class="form-group">
+            <label>كلمة المرور الجديدة</label>
+            <input class="input" id="acc-pass-new" type="password" placeholder="6+ أحرف">
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="changePassword()">تغيير كلمة المرور</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="table-card" style="padding:20px;max-width:800px">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:6px">خطتك الحالية</h3>
+        <p class="text-muted" style="font-size:12.5px;margin-bottom:14px">مجاني — 500 إيميل/شهر · قوالب غير محدودة · REST API</p>
+        <div class="alert alert-info">💡 لزيادة الحد الشهري، يمكنك نشر نسختك الخاصة على خادم خاص مع تعديل <code>monthly_limit</code> في قاعدة البيانات.</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══════════════════════
+     MODALS
+═══════════════════════ -->
+
+<!-- Template Modal -->
+<div class="modal-overlay" id="modal-template">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-template')">✕</button>
+    <h2 id="tpl-modal-title">قالب جديد</h2>
+    <p class="modal-sub">استخدم <code style="color:var(--accent)">{{variable}}</code> للمتغيرات الديناميكية مثل name أو email أو message</p>
+    <input type="hidden" id="tpl-edit-id">
+    <div class="form-group">
+      <label>اسم القالب</label>
+      <input class="input" id="tpl-name" placeholder="contact_form">
+    </div>
+    <div class="form-group">
+      <label>موضوع الإيميل</label>
+      <input class="input" id="tpl-subject" placeholder="رسالة جديدة من {{name}}">
+    </div>
+    <div class="form-group">
+      <label>محتوى الإيميل (HTML)</label>
+      <textarea class="textarea" id="tpl-body" style="min-height:200px">&lt;div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9f9f9"&gt;
+  &lt;div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06)"&gt;
+    &lt;h2 style="color:#00d4ff;margin-bottom:16px"&gt;رسالة جديدة ✉️&lt;/h2&gt;
+    &lt;p&gt;&lt;strong&gt;من:&lt;/strong&gt; {{name}} ({{email}})&lt;/p&gt;
+    &lt;div style="background:#f5f5f5;padding:16px;border-radius:8px;margin-top:12px"&gt;
+      {{message}}
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</textarea>
+      <div class="input-hint" id="tpl-vars-hint">المتغيرات المكتشفة: —</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1;padding:11px;justify-content:center" onclick="saveTemplate()">حفظ القالب</button>
+      <button class="btn btn-ghost" style="padding:11px 18px" onclick="closeModal('modal-template')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Service Modal -->
+<div class="modal-overlay" id="modal-service">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-service')">✕</button>
+    <h2>خدمة SMTP جديدة</h2>
+    <p class="modal-sub">اربط Gmail أو Outlook أو أي خادم SMTP</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>اسم الخدمة</label>
+        <input class="input" id="svc-name" placeholder="Gmail الشخصي">
+      </div>
+      <div class="form-group">
+        <label>اسم المُرسِل</label>
+        <input class="input" id="svc-from-name" placeholder="أحمد محمد">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>بريد المُرسِل</label>
+      <input class="input" id="svc-from-email" type="email" placeholder="you@gmail.com">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>SMTP Host</label>
+        <input class="input" id="svc-host" placeholder="smtp.gmail.com">
+      </div>
+      <div class="form-group">
+        <label>SMTP Port</label>
+        <input class="input" id="svc-port" type="number" value="587">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>اسم المستخدم (البريد)</label>
+      <input class="input" id="svc-user" placeholder="you@gmail.com">
+    </div>
+    <div class="form-group">
+      <label>كلمة المرور / App Password</label>
+      <input class="input" id="svc-pass" type="password" placeholder="xxxx xxxx xxxx xxxx">
+      <div class="input-hint">لـ Gmail: استخدم App Password وليس كلمة مرورك العادية</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1;padding:11px;justify-content:center" onclick="saveService()">حفظ الخدمة</button>
+      <button class="btn btn-ghost" style="padding:11px 16px" onclick="closeModal('modal-service')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="modal-key">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-key')">✕</button>
+    <h2>مفتاح API جديد</h2>
+    <p class="modal-sub">يُنشأ مفتاح عام آمن لاستخدامه في كودك</p>
+    <div class="form-group">
+      <label>تسمية المفتاح</label>
+      <input class="input" id="key-label" placeholder="موقع الشركة">
+    </div>
+    <div class="form-group">
+      <label>المجالات المسموح بها</label>
+      <input class="input" id="key-origins" placeholder="example.com,app.example.com">
+      <div class="input-hint">اتركه فارغاً للسماح لجميع المجالات (غير موصى به في الإنتاج)</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1;padding:11px;justify-content:center" onclick="saveKey()">إنشاء المفتاح</button>
+      <button class="btn btn-ghost" style="padding:11px 16px" onclick="closeModal('modal-key')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Webhook Modal -->
+<div class="modal-overlay" id="modal-webhook">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-webhook')">✕</button>
+    <h2>Webhook جديد</h2>
+    <p class="modal-sub">استقبل إشعارات POST عند حدث إرسال أو فشل</p>
+    <div class="form-group">
+      <label>URL الوجهة</label>
+      <input class="input" id="wh-url" placeholder="https://your-site.com/webhook">
+    </div>
+    <div class="form-group">
+      <label>الأحداث</label>
+      <input class="input" id="wh-events" value="sent,failed" placeholder="sent,failed">
+      <div class="input-hint">فصل بفاصلة: sent, failed</div>
+    </div>
+    <div class="form-group">
+      <label>Secret (اختياري)</label>
+      <input class="input" id="wh-secret" placeholder="سيُستخدم لتوقيع الطلبات">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1;padding:11px;justify-content:center" onclick="saveWebhook()">حفظ</button>
+      <button class="btn btn-ghost" style="padding:11px 16px" onclick="closeModal('modal-webhook')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG — change to your backend URL
+// ══════════════════════════════════════════
+const API = (window.MAILFLOW_API || 'http://localhost:3001').replace(/\/$/, '')
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let token     = localStorage.getItem('mf_token')
+let userEmail = localStorage.getItem('mf_email') || ''
+let userName  = localStorage.getItem('mf_name') || ''
+let _templates = [], _services = [], _keys = [], _webhooks = []
+
+// ══════════════════════════════════════════
+//  API HELPER
+// ══════════════════════════════════════════
+async function api(method, path, body) {
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }
+    if (body) opts.body = JSON.stringify(body)
+    const r = await fetch(API + path, opts)
+    const data = await r.json()
+    if (r.status === 401 && path !== '/auth/login') { doLogout(); return {} }
+    return data
+  } catch (e) {
+    return { error: 'تعذر الاتصال بالخادم' }
+  }
+}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+function toast(msg, type = 'success') {
+  const el = document.createElement('div')
+  el.className = `toast-item toast-${type}`
+  el.innerHTML = (type==='success'?'✅':type==='error'?'❌':'ℹ️') + ' ' + msg
+  document.getElementById('toast').appendChild(el)
+  setTimeout(() => el.remove(), 3500)
+}
+
+// ══════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════
+function switchLoginTab(tab) {
+  document.getElementById('login-form').style.display    = tab==='login'    ? 'block' : 'none'
+  document.getElementById('register-form').style.display = tab==='register' ? 'block' : 'none'
+  document.querySelectorAll('.tab-sm').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')))
+  document.getElementById('alert-login').innerHTML = ''
+}
+
+function loginAlert(msg, type='error') {
+  document.getElementById('alert-login').innerHTML = `<div class="alert alert-${type}">${msg}</div>`
+}
+
+async function doLogin() {
+  const btn = document.getElementById('login-btn')
+  const email = document.getElementById('login-email').value.trim()
+  const password = document.getElementById('login-pass').value
+  if (!email || !password) return loginAlert('الرجاء إدخال البريد وكلمة المرور')
+  btn.disabled = true; btn.textContent = 'جارٍ الدخول…'
+  try {
+    const data = await fetch(`${API}/auth/login`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password })
+    }).then(r => r.json())
+    if (data.error) { loginAlert(data.error); btn.disabled=false; btn.textContent='دخول →'; return }
+    loginSuccess(data.token, data.email, data.name)
+  } catch { loginAlert('تعذر الاتصال بالخادم. تأكد من تشغيل الـ Backend.') }
+  btn.disabled=false; btn.textContent='دخول →'
+}
+
+async function doRegister() {
+  const btn = document.getElementById('register-btn')
+  const name = document.getElementById('reg-name').value.trim()
+  const email = document.getElementById('reg-email').value.trim()
+  const password = document.getElementById('reg-pass').value
+  if (!email || !password) return loginAlert('الرجاء ملء الحقول المطلوبة')
+  if (password.length < 6) return loginAlert('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+  btn.disabled=true; btn.textContent='جارٍ التسجيل…'
+  try {
+    const data = await fetch(`${API}/auth/register`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password, name })
+    }).then(r => r.json())
+    if (data.error) { loginAlert(data.error); btn.disabled=false; btn.textContent='إنشاء حساب مجاني →'; return }
+    loginSuccess(data.token, data.email, data.name)
+  } catch { loginAlert('تعذر الاتصال بالخادم.') }
+  btn.disabled=false; btn.textContent='إنشاء حساب مجاني →'
+}
+
+function loginSuccess(tok, email, name) {
+  token = tok; userEmail = email; userName = name || email.split('@')[0]
+  localStorage.setItem('mf_token', tok)
+  localStorage.setItem('mf_email', email)
+  localStorage.setItem('mf_name', userName)
+  document.getElementById('login-screen').style.display = 'none'
+  updateSidebarUser()
+  loadAll()
+}
+
+function doLogout() {
+  localStorage.removeItem('mf_token')
+  localStorage.removeItem('mf_email')
+  localStorage.removeItem('mf_name')
+  location.reload()
+}
+
+function updateSidebarUser() {
+  document.getElementById('sidebar-name').textContent   = userName || userEmail.split('@')[0]
+  document.getElementById('sidebar-avatar').textContent = (userName || userEmail)[0]?.toUpperCase() || 'م'
+}
+
+if (token) {
+  document.getElementById('login-screen').style.display = 'none'
+  updateSidebarUser()
+  loadAll()
+}
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+const PAGE_TITLES = {
+  overview:'نظرة عامة', logs:'سجل الإيميلات', templates:'القوالب',
+  services:'خدمات SMTP', keys:'مفاتيح API', webhooks:'Webhooks',
+  integration:'طريقة الدمج', playground:'اختبار الإرسال', account:'إعدادات الحساب'
+}
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
+  document.getElementById('page-' + name)?.classList.add('active')
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${name}'`)) n.classList.add('active')
+  })
+  document.getElementById('page-title').textContent = PAGE_TITLES[name] || name
+  if (name==='logs')        loadLogs()
+  if (name==='templates')   renderTemplates()
+  if (name==='services')    renderServices()
+  if (name==='keys')        renderKeys()
+  if (name==='webhooks')    loadWebhooks()
+  if (name==='playground')  loadPlaygroundTemplates()
+  if (name==='integration') loadIntegration()
+  if (name==='account')     loadAccount()
+}
+
+// ══════════════════════════════════════════
+//  LOAD ALL
+// ══════════════════════════════════════════
+async function loadAll() {
+  try {
+    const [stats, logs, templates, services, keys] = await Promise.all([
+      api('GET','/stats'), api('GET','/logs'),
+      api('GET','/templates'), api('GET','/services'), api('GET','/keys')
+    ])
+    if (stats.error) {
+      document.getElementById('overview-alert').innerHTML =
+        '<div class="alert alert-error">⚠️ تعذر الاتصال بالخادم. تأكد من تشغيل <code>node server.js</code></div>'
+      return
+    }
+    _templates = Array.isArray(templates) ? templates : []
+    _services  = Array.isArray(services)  ? services  : []
+    _keys      = Array.isArray(keys)      ? keys      : []
+    renderStats(stats)
+    renderOverviewLogs(Array.isArray(logs) ? logs.slice(0,8) : [])
+    renderChart(stats.daily || [])
+    // Welcome hints
+    if (!_services.length) {
+      document.getElementById('overview-alert').innerHTML =
+        '<div class="alert alert-warn">⚡ ابدأ بإضافة <a href="#" onclick="showPage(\'services\')" style="color:var(--warn)">خدمة SMTP</a> ثم <a href="#" onclick="showPage(\'templates\')" style="color:var(--warn)">قالب</a> للبدء في الإرسال</div>'
+    }
+  } catch {
+    document.getElementById('overview-alert').innerHTML =
+      '<div class="alert alert-error">⚠️ تعذر الاتصال بالخادم</div>'
+  }
+}
+
+// ══════════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════════
+function renderStats(s) {
+  document.getElementById('stat-month').textContent  = s.month  ?? 0
+  document.getElementById('stat-total').textContent  = s.total  ?? 0
+  document.getElementById('stat-today').textContent  = s.today  ?? 0
+  document.getElementById('stat-rate').textContent   = (s.success_rate ?? 100) + '%'
+  document.getElementById('stat-rate-label').textContent = s.total ? `من ${s.total} إجمالي` : 'لا إرسال بعد'
+  document.getElementById('stat-limit').textContent  = s.monthly_limit || 500
+  const pct = Math.min(100, ((s.month||0) / (s.monthly_limit||500)) * 100)
+  const bar = document.getElementById('stat-progress')
+  bar.style.width = pct + '%'
+  bar.style.background = pct > 85 ? 'var(--danger)' : pct > 60 ? 'var(--warn)' : 'var(--accent)'
+}
+
+// ══════════════════════════════════════════
+//  CHART (30-day daily)
+// ══════════════════════════════════════════
+function renderChart(daily) {
+  const days = []
+  for (let i=29; i>=0; i--) {
+    const d = new Date(Date.now() - i * 86400000)
+    const key = d.toISOString().split('T')[0]
+    days.push({ key, label: i%5===0 ? d.toLocaleDateString('ar', {day:'numeric',month:'short'}) : '', count:0 })
+  }
+  daily.forEach(r => {
+    const s = days.find(x => x.key === r.d)
+    if (s) s.count = r.c
+  })
+  const max = Math.max(1, ...days.map(d => d.count))
+  const chart = document.getElementById('overview-chart')
+  const labels = document.getElementById('chart-labels')
+  chart.innerHTML = days.map(d => {
+    const h = Math.round((d.count/max)*68)+4
+    return `<div class="bar" style="height:${h}px;background:${d.count?'linear-gradient(180deg,var(--accent3),#059669)':'var(--surface3)'}">
+      <div class="bar-tooltip">${d.key}<br>${d.count} إيميل</div></div>`
+  }).join('')
+  labels.innerHTML = days.map(d => `<div class="bar-label">${d.label}</div>`).join('')
+}
+
+// ══════════════════════════════════════════
+//  LOGS
+// ══════════════════════════════════════════
+function renderOverviewLogs(logs) {
+  const tbody = document.getElementById('overview-logs-body')
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-muted" style="text-align:center;padding:28px">لا توجد إيميلات بعد. أرسل أول إيميل من صفحة الاختبار!</td></tr>'
+    return
+  }
+  tbody.innerHTML = logs.map(l => `<tr>
+    <td>${l.to_email}</td>
+    <td class="text-muted" style="font-size:12px">${l.subject ? (l.subject.length>40?l.subject.slice(0,40)+'…':l.subject) : '—'}</td>
+    <td>${statusPill(l.status)}</td>
+    <td class="text-muted font-mono">${timeAgo(l.sent_at)}</td>
+  </tr>`).join('')
+}
+
+async function loadLogs() {
+  const tbody = document.getElementById('logs-body')
+  tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:28px">جارٍ التحميل…</td></tr>'
+  const status = document.getElementById('log-filter-status')?.value || ''
+  const logs = await api('GET', `/logs?limit=100${status?'&status='+status:''}`)
+  if (!Array.isArray(logs) || !logs.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:28px">لا توجد إيميلات</td></tr>'
+    return
+  }
+  tbody.innerHTML = logs.map(l => `<tr>
+    <td class="font-mono text-muted" title="${l.id}">${l.id.slice(0,8)}…</td>
+    <td>${l.to_email}</td>
+    <td class="text-muted" style="font-size:12px">${l.subject ? (l.subject.length>36?l.subject.slice(0,36)+'…':l.subject) : '—'}</td>
+    <td class="text-muted font-mono" style="font-size:11px">${l.service_id ? l.service_id.slice(0,6)+'…' : '—'}</td>
+    <td>${statusPill(l.status)}</td>
+    <td class="text-muted font-mono">${timeAgo(l.sent_at)}</td>
+  </tr>`).join('')
+}
+
+// ══════════════════════════════════════════
+//  TEMPLATES
+// ══════════════════════════════════════════
+function renderTemplates() {
+  const grid = document.getElementById('templates-grid')
+  if (!_templates.length) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><h3>لا توجد قوالب بعد</h3><p>أنشئ قالبك الأول لتبدأ إرسال الإيميلات</p><button class="btn btn-primary" onclick="openModal('modal-template')">+ قالب جديد</button></div>`
+    return
+  }
+  grid.innerHTML = _templates.map(t => {
+    const vars = safeParseJSON(t.variables, [])
+    return `<div class="tpl-card">
+      <div class="tpl-name">${t.name}</div>
+      <div class="tpl-sub">${t.subject}</div>
+      ${vars.length ? `<div class="tpl-badge">${vars.map(v=>`<span class="tpl-var">{{${v}}}</span>`).join('')}</div>` : ''}
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px">ID: <code style="color:var(--accent);font-size:10.5px">${t.id.slice(0,14)}…</code></div>
+      <div class="tpl-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editTemplate('${t.id}')">✏️ تعديل</button>
+        <button class="btn btn-ghost btn-sm" onclick="copyText('${t.id}')">📋 نسخ ID</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${t.id}')">🗑️</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function editTemplate(id) {
+  const t = _templates.find(x => x.id===id); if (!t) return
+  document.getElementById('tpl-modal-title').textContent = 'تعديل القالب'
+  document.getElementById('tpl-edit-id').value  = t.id
+  document.getElementById('tpl-name').value    = t.name
+  document.getElementById('tpl-subject').value = t.subject
+  document.getElementById('tpl-body').value    = t.html_body
+  detectVars()
+  openModal('modal-template')
+}
+
+function detectVars() {
+  const html = document.getElementById('tpl-body').value
+  const vars = [...new Set([...html.matchAll(/\{\{(\w+)\}\}/g)].map(m=>m[1]))]
+  document.getElementById('tpl-vars-hint').textContent = vars.length
+    ? 'المتغيرات المكتشفة: ' + vars.map(v=>`{{${v}}}`).join(', ')
+    : 'المتغيرات المكتشفة: —'
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('tpl-body')?.addEventListener('input', detectVars)
+})
+
+async function saveTemplate() {
+  const id = document.getElementById('tpl-edit-id').value
+  const name = document.getElementById('tpl-name').value.trim()
+  const subject = document.getElementById('tpl-subject').value.trim()
+  const html_body = document.getElementById('tpl-body').value.trim()
+  if (!name||!subject||!html_body) return toast('الرجاء ملء جميع الحقول', 'error')
+  const r = id
+    ? await api('PUT', `/templates/${id}`, { name, subject, html_body })
+    : await api('POST', '/templates', { name, subject, html_body })
+  if (r.error) return toast(r.error, 'error')
+  closeModal('modal-template')
+  document.getElementById('tpl-edit-id').value = ''
+  document.getElementById('tpl-modal-title').textContent = 'قالب جديد'
+  _templates = await api('GET', '/templates')
+  renderTemplates()
+  toast(id ? 'تم تحديث القالب' : 'تم إنشاء القالب')
+}
+
+async function deleteTemplate(id) {
+  if (!confirm('حذف هذا القالب نهائياً؟')) return
+  await api('DELETE', `/templates/${id}`)
+  _templates = _templates.filter(t => t.id!==id)
+  renderTemplates()
+  toast('تم حذف القالب', 'info')
+}
+
+// ══════════════════════════════════════════
+//  SERVICES
+// ══════════════════════════════════════════
+function renderServices() {
+  const list = document.getElementById('services-list')
+  if (!_services.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🔌</div><h3>لا توجد خدمات</h3><p>أضف خدمة SMTP لتفعيل الإرسال</p><button class="btn btn-primary" onclick="openModal('modal-service')">+ أضف خدمة</button></div>`
+    return
+  }
+  list.innerHTML = _services.map(s => `
+    <div class="svc-card">
+      <div class="svc-icon">📧</div>
+      <div class="svc-info">
+        <div class="svc-name">${s.name}</div>
+        <div class="svc-meta">${s.from_email} · ${s.smtp_host}:${s.smtp_port}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="testService('${s.id}',this)">🧪 اختبار</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteService('${s.id}')">🗑️</button>
+      </div>
+    </div>`).join('')
+}
+
+async function saveService() {
+  const body = {
+    name: document.getElementById('svc-name').value.trim(),
+    from_name: document.getElementById('svc-from-name').value.trim(),
+    from_email: document.getElementById('svc-from-email').value.trim(),
+    smtp_host: document.getElementById('svc-host').value.trim(),
+    smtp_port: parseInt(document.getElementById('svc-port').value)||587,
+    smtp_user: document.getElementById('svc-user').value.trim(),
+    smtp_pass: document.getElementById('svc-pass').value
+  }
+  if (!body.name||!body.smtp_host||!body.smtp_user||!body.smtp_pass||!body.from_email)
+    return toast('الرجاء ملء جميع الحقول', 'error')
+  const r = await api('POST', '/services', body)
+  if (r.error) return toast(r.error, 'error')
+  closeModal('modal-service')
+  _services = await api('GET', '/services')
+  renderServices()
+  toast('تم إضافة الخدمة ✅')
+}
+
+async function testService(id, btn) {
+  const orig = btn.textContent; btn.textContent='⏳ …'; btn.disabled=true
+  const r = await api('POST', '/services/test', { service_id: id })
+  btn.textContent=orig; btn.disabled=false
+  r.ok ? toast(r.message, 'success') : toast('فشل الاتصال: ' + r.error, 'error')
+}
+
+async function deleteService(id) {
+  if (!confirm('حذف هذه الخدمة؟')) return
+  await api('DELETE', `/services/${id}`)
+  _services = _services.filter(s => s.id!==id)
+  renderServices()
+  toast('تم حذف الخدمة', 'info')
+}
+
+// ══════════════════════════════════════════
+//  API KEYS
+// ══════════════════════════════════════════
+function renderKeys() {
+  const list = document.getElementById('keys-list')
+  if (!_keys.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🔑</div><h3>لا توجد مفاتيح</h3><button class="btn btn-primary" onclick="openModal('modal-key')">+ مفتاح جديد</button></div>`
+    return
+  }
+  list.innerHTML = _keys.map(k => `
+    <div class="key-card">
+      <div class="key-icon">🔑</div>
+      <div class="key-info">
+        <div class="key-label">${k.label} ${k.is_active ? '' : '<span style="font-size:10px;color:var(--danger)">(معطّل)</span>'}</div>
+        <div class="key-value">${k.public_key}</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">المجالات: ${k.allowed_origins}</div>
+      </div>
+      <div class="key-actions">
+        <button class="btn-icon" onclick="copyText('${k.public_key}')" title="نسخ">📋</button>
+        <button class="btn-icon" onclick="deleteKey('${k.id}')" style="color:var(--danger)" title="حذف">🗑️</button>
+      </div>
+    </div>`).join('')
+}
+
+async function saveKey() {
+  const label = document.getElementById('key-label').value||'مفتاح جديد'
+  const allowed_origins = document.getElementById('key-origins').value||'*'
+  const r = await api('POST', '/keys', { label, allowed_origins })
+  if (r.error) return toast(r.error, 'error')
+  closeModal('modal-key')
+  _keys = await api('GET', '/keys')
+  renderKeys()
+  toast('تم إنشاء المفتاح ✅')
+}
+
+async function deleteKey(id) {
+  if (!confirm('حذف هذا المفتاح؟ لن يعمل أي موقع يستخدمه.')) return
+  await api('DELETE', `/keys/${id}`)
+  _keys = _keys.filter(k => k.id!==id)
+  renderKeys()
+  toast('تم حذف المفتاح', 'info')
+}
+
+// ══════════════════════════════════════════
+//  WEBHOOKS
+// ══════════════════════════════════════════
+async function loadWebhooks() {
+  _webhooks = await api('GET', '/webhooks')
+  const list = document.getElementById('webhooks-list')
+  if (!Array.isArray(_webhooks)||!_webhooks.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🔗</div><h3>لا توجد Webhooks</h3><p>أضف Webhook لاستقبال إشعارات فورية</p><button class="btn btn-primary" onclick="openModal('modal-webhook')">+ Webhook جديد</button></div>`
+    return
+  }
+  list.innerHTML = _webhooks.map(w => `
+    <div class="wh-card">
+      <div class="wh-dot ${w.is_active?'':'off'}"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${w.url}</div>
+        <div style="font-size:11.5px;color:var(--muted)">الأحداث: ${w.events} ${w.secret?'· مؤمّن 🔐':''}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteWebhook('${w.id}')">🗑️</button>
+    </div>`).join('')
+}
+
+async function saveWebhook() {
+  const url = document.getElementById('wh-url').value.trim()
+  if (!url) return toast('أدخل URL', 'error')
+  const r = await api('POST', '/webhooks', {
+    url, events: document.getElementById('wh-events').value||'sent,failed',
+    secret: document.getElementById('wh-secret').value||null
+  })
+  if (r.error) return toast(r.error, 'error')
+  closeModal('modal-webhook'); loadWebhooks()
+  toast('تم إنشاء Webhook ✅')
+}
+
+async function deleteWebhook(id) {
+  if (!confirm('حذف هذا Webhook؟')) return
+  await api('DELETE', `/webhooks/${id}`)
+  loadWebhooks(); toast('تم الحذف', 'info')
+}
+
+// ══════════════════════════════════════════
+//  INTEGRATION
+// ══════════════════════════════════════════
+function loadIntegration() {
+  const pk = _keys[0]?.public_key || 'pk_your_key_here'
+  const tpl = _templates[0]?.id || 'your_template_id'
+  document.getElementById('integration-pk').textContent = `'${pk}'`
+  document.getElementById('intg-pk-curl').textContent = pk
+  document.getElementById('integration-tpl').textContent = `'${tpl}'`
+  document.getElementById('intg-tpl-curl').textContent = tpl
+  document.getElementById('intg-sdk-url').textContent = `"${API}/sdk.js"`
+  document.getElementById('intg-api-url').textContent = API
+}
+
+// ══════════════════════════════════════════
+//  PLAYGROUND
+// ══════════════════════════════════════════
+function loadPlaygroundTemplates() {
+  const sel = document.getElementById('pg-template')
+  sel.innerHTML = '<option value="">— اختر قالباً —</option>' +
+    _templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('')
+  sel.onchange = () => {
+    const t = _templates.find(x => x.id===sel.value)
+    if (!t) { document.getElementById('pg-vars').innerHTML=''; return }
+    const vars = safeParseJSON(t.variables, [])
+    if (vars.length) {
+      document.getElementById('pg-params').value = JSON.stringify(
+        Object.fromEntries(vars.map(v => [v, v==='name'?'أحمد':v==='email'?'ahmed@example.com':'نص تجريبي'])),
+        null, 2
+      )
+    }
+    document.getElementById('pg-vars').innerHTML = vars.length
+      ? `<div class="alert alert-info" style="margin-bottom:12px">📋 المتغيرات: ${vars.map(v=>`<code style="color:var(--accent)">{{${v}}}</code>`).join(' ')}</div>` : ''
+  }
+}
+
+async function sendPlayground() {
+  const template_id = document.getElementById('pg-template').value
+  const to_email = document.getElementById('pg-to').value.trim()
+  let params = {}
+  try { params = JSON.parse(document.getElementById('pg-params').value) }
+  catch { return toast('خطأ في صيغة JSON', 'error') }
+  if (!template_id) return toast('اختر قالباً أولاً', 'error')
+  if (!to_email) return toast('أدخل البريد الإلكتروني', 'error')
+  if (!_keys.length) return toast('أنشئ مفتاح API أولاً', 'error')
+  document.getElementById('pg-result').innerHTML = '<span class="text-warn">⏳ جارٍ الإرسال…</span>'
+  const r = await fetch(`${API}/v1/send`, {
+    method:'POST', headers:{'Content-Type':'application/json','X-Public-Key':_keys[0].public_key},
+    body: JSON.stringify({ template_id, to_email, params })
+  }).then(x => x.json()).catch(() => ({ error: 'تعذر الاتصال' }))
+  document.getElementById('pg-result').innerHTML = r.ok
+    ? `<div class="alert alert-success">✅ تم الإرسال بنجاح!<br><small class="font-mono">ID: ${r.id}</small></div>`
+    : `<div class="alert alert-error">❌ فشل الإرسال<br><small>${r.error}</small></div>`
+  // Refresh overview stats
+  const stats = await api('GET','/stats')
+  if (!stats.error) renderStats(stats)
+}
+
+// ══════════════════════════════════════════
+//  ACCOUNT
+// ══════════════════════════════════════════
+async function loadAccount() {
+  const me = await api('GET', '/auth/me')
+  if (me.error) return
+  document.getElementById('acc-name').value  = me.name || ''
+  document.getElementById('acc-email').value = me.email || ''
+}
+
+async function saveProfile() {
+  const name = document.getElementById('acc-name').value.trim()
+  const r = await api('PUT', '/auth/profile', { name })
+  if (r.error) return toast(r.error, 'error')
+  userName = name; updateSidebarUser()
+  localStorage.setItem('mf_name', name)
+  toast('تم حفظ الملف الشخصي ✅')
+}
+
+async function changePassword() {
+  const current_password = document.getElementById('acc-pass-current').value
+  const new_password = document.getElementById('acc-pass-new').value
+  if (!current_password||!new_password) return toast('أدخل كلمة المرور الحالية والجديدة', 'error')
+  const r = await api('PUT', '/auth/password', { current_password, new_password })
+  if (r.error) return toast(r.error, 'error')
+  document.getElementById('acc-pass-current').value=''
+  document.getElementById('acc-pass-new').value=''
+  toast('تم تغيير كلمة المرور ✅')
+}
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function openModal(id)  { document.getElementById(id)?.classList.add('open') }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open') }
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target===m) m.classList.remove('open') })
+})
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'))
+})
+
+function statusPill(s) {
+  const m = { sent:'pill-sent', failed:'pill-failed', pending:'pill-pending' }
+  const l = { sent:'✓ مُرسَل', failed:'✕ فشل', pending:'⏳ انتظار' }
+  return `<span class="pill ${m[s]||'pill-pending'}">${l[s]||s}</span>`
+}
+
+function timeAgo(ts) {
+  const sec = Math.floor(Date.now()/1000 - ts)
+  if (sec < 60)    return 'الآن'
+  if (sec < 3600)  return `قبل ${Math.floor(sec/60)} د`
+  if (sec < 86400) return `قبل ${Math.floor(sec/3600)} س`
+  return `قبل ${Math.floor(sec/86400)} يوم`
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => toast('تم النسخ ✅', 'info'))
+}
+
+function copyCode(btn) {
+  const box = btn.parentElement
+  const text = box.innerText.replace(/^نسخ\n?/, '').trim()
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ تم'; setTimeout(() => btn.textContent = 'نسخ', 2000)
+  })
+}
+
+function safeParseJSON(str, fallback=[]) {
+  try { return JSON.parse(str) } catch { return fallback }
+}
+</script>
+</body>
+</html>
